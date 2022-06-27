@@ -39,7 +39,6 @@ logger.addHandler(handler)
 
 def send_message(bot, message):
     """отправляет сообщение в Telegram чат."""
-
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
@@ -48,11 +47,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(current_timestamp):
-    """делает запрос к единственному эндпоинту API-сервиса.
-    В качестве параметра функция получает временную метку.
-    В случае успешного запроса должна вернуть ответ API,
-    преобразовав его из формата JSON к типам данных Python."""
-
+    """делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
