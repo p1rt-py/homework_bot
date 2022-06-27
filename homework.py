@@ -100,7 +100,7 @@ def check_tokens():
 
 
 def main():
-    """Функция main(): в ней описана основная логика работы программы."""
+    """Функция main в ней описана основная логика работы программы."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     STATUS = ''
