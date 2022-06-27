@@ -38,7 +38,8 @@ logger.addHandler(handler)
 
 
 def send_message(bot, message):
-    """отправляет сообщение в Telegram чат"""
+    """отправляет сообщение в Telegram чат."""
+
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
@@ -51,6 +52,7 @@ def get_api_answer(current_timestamp):
     В качестве параметра функция получает временную метку.
     В случае успешного запроса должна вернуть ответ API,
     преобразовав его из формата JSON к типам данных Python."""
+
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -74,6 +76,7 @@ def check_response(response):
      Если ответ API соответствует ожиданиям,
      то функция должна вернуть список домашних работ (он может быть и пустым),
       доступный в ответе API по ключу 'homeworks'"""
+
     try:
         hw_list = response['homeworks']
     except KeyError:
@@ -94,6 +97,7 @@ def parse_status(homework):
       В случае успеха, функция возвращает подготовленную
        для отправки в Telegram строку,
       содержащую один из вердиктов словаря HOMEWORK_STATUSES"""
+
     if 'homework_name' not in homework:
         raise KeyError('Отсутствует ключ "homework_name" в ответе API')
     if 'status' not in homework:
@@ -107,10 +111,11 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """проверяет доступность переменных окружения,
+    """проверяет доступность переменных окружения.
      которые необходимы для работы программы.
      Если отсутствует хотя бы одна переменная окружения — функция
      должна вернуть False, иначе — True."""
+
     if all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
         return True
 
