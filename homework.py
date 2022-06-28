@@ -8,6 +8,8 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
+from exceptions import (StatusCodeError, TokenError)
+
 load_dotenv()
 
 
@@ -27,15 +29,6 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-logging.basicConfig(
-    level=logging.INFO,
-    filename='homework.log',
-    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler(stream=sys.stdout)
-logger.addHandler(handler)
-
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
@@ -43,48 +36,45 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
     except Exception as error:
-        logger.error(f'Ошибка отправки сообщения в Telegramm: {error}')
+        raise SystemError(f'Ошибка отправки сообщения в Telegramm') from error
 
 
 def get_api_answer(current_timestamp):
-    """делает запрос к единственному эндпоинту API-сервиса."""
+    """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
         hw_status = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except Exception as error:
-        logging.error(f'Ошибка при запросе: {error}')
+        raise SystemError(f'Ошибка при запросе: {error}')
     if hw_status.status_code != HTTPStatus.OK:
         status_code = hw_status.status_code
-        logging.error(f'Ошибка {status_code}')
-        raise Exception(f'Ошибка {status_code}')
+        raise StatusCodeError(f'Ошибка {status_code}')
     try:
         return hw_status.json()
     except ValueError:
-        logger.error('Ошибка парсинга')
+        raise ValueError('Ошибка парсинга')
 
 
 def check_response(response):
-    """проверяет ответ API на корректность."""
-    try:
-        hw_list = response['homeworks']
-    except KeyError:
-        logger.error('Ошибка словаря по ключу homeworks')
-        raise KeyError('Ошибка словаря по ключу homeworks')
-    try:
-        homework = hw_list[0]
-    except IndexError:
-        logger.error('Список домашних работ пуст')
-        raise IndexError('Список домашних работ пуст')
-    return homework
+    """Проверяет ответ API на корректность."""
+    if type(response) == dict:
+        response['current_date']
+        homeworks = response['homeworks']
+        if type(homeworks) == list:
+            return homeworks
+        else:
+            raise KeyError('Отсутствует ключа homeworks')
+    else:
+        raise TypeError('Ответ API не является словарем')
 
 
 def parse_status(homework):
-    """извлекает из информации о  домашней работе."""
+    """Извлекает из информации о  домашней работе."""
     if 'homework_name' not in homework:
         raise KeyError('Отсутствует ключ "homework_name" в ответе API')
     if 'status' not in homework:
-        raise Exception('Отсутствует ключ "status" в ответе API')
+        raise KeyError('Отсутствует ключ "status" в ответе API')
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
@@ -94,9 +84,8 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """проверяет доступность переменных окружения."""
-    if all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
-        return True
+    """Проверяет доступность переменных окружения."""
+    return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def main():
@@ -107,24 +96,37 @@ def main():
     ERROR_CACHE_MESSAGE = ''
     if not check_tokens():
         logger.critical('Ошибка переменных окружения')
-        raise Exception('Ошибка переменных окружения')
+        raise TokenError('Ошибка переменных окружения')
+        # я оставлю пока рейз, хоть ты и сказал, что надо sys.exit, но при
+        # этом для количества мне надо исключений добавить)
+        sys.exit('Выйдите из интерпретатора, подняв SystemExit')
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            current_timestamp = response.get('current_date')
             message = parse_status(check_response(response))
             if message != STATUS:
                 send_message(bot, message)
                 STATUS = message
-            time.sleep(RETRY_TIME)
+            else:
+                logger.debug('Нет новых статусов')
         except Exception as error:
             logger.error(error)
             message2 = str(error)
             if message2 != ERROR_CACHE_MESSAGE:
                 send_message(bot, message2)
                 ERROR_CACHE_MESSAGE = message2
-        time.sleep(RETRY_TIME)
+        finally:
+            current_timestamp = response.get('current_date')
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        filename='homework.log',
+        format='%(asctime)s, %(levelname)s, %(name)s, %(message)s')
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    logger.addHandler(handler)
     main()
