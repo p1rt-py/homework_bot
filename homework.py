@@ -8,7 +8,7 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
-from exceptions import (StatusCodeError, TokenError)
+from exceptions import (StatusCodeError)
 
 load_dotenv()
 
@@ -30,6 +30,7 @@ HOMEWORK_STATUSES = {
 }
 
 TOKEN_ERROR = 'Oшибка переменных окружения'
+
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
