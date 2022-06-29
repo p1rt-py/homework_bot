@@ -4,5 +4,5 @@ class StatusCodeError(Exception):
 
 
 class TokenError(Exception):
-    """Ошибка в токенах."""
+    """Oшибка переменных окружения."""
     pass

@@ -29,6 +29,7 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+TOKEN_ERROR = 'Oшибка переменных окружения'
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
@@ -58,7 +59,7 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
-    if type(response) == dict:
+    if isinstance(response, dict):
         response['current_date']
         homeworks = response['homeworks']
         if type(homeworks) == list:
@@ -95,11 +96,8 @@ def main():
     STATUS = ''
     ERROR_CACHE_MESSAGE = ''
     if not check_tokens():
-        logger.critical('Ошибка переменных окружения')
-        raise TokenError('Ошибка переменных окружения')
-        # я оставлю пока рейз, хоть ты и сказал, что надо sys.exit, но при
-        # этом для количества мне надо исключений добавить)
-        sys.exit('Выйдите из интерпретатора, подняв SystemExit')
+        logger.critical(TOKEN_ERROR)
+        sys.exit(TOKEN_ERROR)
     while True:
         try:
             response = get_api_answer(current_timestamp)
@@ -111,10 +109,10 @@ def main():
                 logger.debug('Нет новых статусов')
         except Exception as error:
             logger.error(error)
-            message2 = str(error)
-            if message2 != ERROR_CACHE_MESSAGE:
-                send_message(bot, message2)
-                ERROR_CACHE_MESSAGE = message2
+            message_error = str(error)
+            if message_error != ERROR_CACHE_MESSAGE:
+                send_message(bot, message_error)
+                ERROR_CACHE_MESSAGE = message_error
         finally:
             current_timestamp = response.get('current_date')
             time.sleep(RETRY_TIME)
