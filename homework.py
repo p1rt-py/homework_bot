@@ -50,8 +50,7 @@ def get_api_answer(current_timestamp):
     except Exception as error:
         raise SystemError(f'Ошибка при запросе: {error}')
     if hw_status.status_code != HTTPStatus.OK:
-        status_code = hw_status.status_code
-        raise StatusCodeError(f'Ошибка {status_code}')
+        raise StatusCodeError(f'Ошибка {hw_status.status_code}')
     try:
         return hw_status.json()
     except ValueError:
@@ -60,15 +59,15 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
-    if isinstance(response, dict):
-        response['current_date']
-        homeworks = response['homeworks']
-        if type(homeworks) == list:
-            return homeworks
-        else:
-            raise KeyError('Отсутствует ключа homeworks')
-    else:
+    logging.info('Проверка ответа от API')
+    if not isinstance(response, dict):
         raise TypeError('Ответ API не является словарем')
+    if 'homeworks' and 'current_date' not in response:
+        raise KeyError('Отсутствует ключ')
+    homeworks = response['homeworks']
+    if not isinstance(homeworks, list):
+        raise TypeError('Ответ API не является листом')
+    return homeworks
 
 
 def parse_status(homework):
