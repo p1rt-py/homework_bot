@@ -62,7 +62,7 @@ def check_response(response):
     logging.info('Проверка ответа от API')
     if not isinstance(response, dict):
         raise TypeError('Ответ API не является словарем')
-    if 'homeworks' and 'current_date' not in response:
+    if 'homeworks' not in response or 'current_date' not in response:
         raise KeyError('Отсутствует ключ')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
