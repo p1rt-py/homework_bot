@@ -62,7 +62,7 @@ def check_response(response):
     logging.info('Проверка ответа от API')
     if not isinstance(response, dict):
         raise TypeError('Ответ API не является словарем')
-    if 'homeworks' not in response or 'current_date' not in response:
+    if 'homeworks' not in response and 'current_date' not in response:
         raise KeyError('Отсутствует ключ')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
@@ -93,26 +93,25 @@ def main():
     """Функция main в ней описана основная логика работы программы."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    STATUS = ''
-    ERROR_CACHE_MESSAGE = ''
     if not check_tokens():
         logger.critical(TOKEN_ERROR)
         sys.exit(TOKEN_ERROR)
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            message = parse_status(check_response(response))
-            if message != STATUS:
-                send_message(bot, message)
-                STATUS = message
+            homeworks = check_response(response)
+            if homeworks:
+                homework = homeworks[0]
             else:
                 logger.debug('Нет новых статусов')
+                raise Exception('Нет новых статусов')
+            homework_status = parse_status(homework)
+            send_message(bot, homework_status)
         except Exception as error:
             logger.error(error)
             message_error = str(error)
-            if message_error != ERROR_CACHE_MESSAGE:
-                send_message(bot, message_error)
-                ERROR_CACHE_MESSAGE = message_error
+          # logging.error(message_error, exc_info=True)
+            send_message(bot, message_error)
         finally:
             current_timestamp = response.get('current_date')
             time.sleep(RETRY_TIME)
